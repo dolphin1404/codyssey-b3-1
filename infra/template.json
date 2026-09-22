@@ -1,0 +1,236 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Codyssey B3-1 public web service (Seoul only)",
+  "Parameters": {
+    "AmiId": {
+      "Type": "AWS::EC2::Image::Id",
+      "Description": "Amazon Linux 2023 x86_64 AMI in Seoul"
+    },
+    "KeyName": {
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    },
+    "SshCidr": {
+      "Type": "String",
+      "AllowedPattern": "(?:[0-9]{1,3}\\.){3}[0-9]{1,3}/32",
+      "Description": "Operator public IPv4 /32 only"
+    }
+  },
+  "Rules": {
+    "SeoulOnly": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Equals": [
+              {
+                "Ref": "AWS::Region"
+              },
+              "ap-northeast-2"
+            ]
+          },
+          "AssertDescription": "Use ap-northeast-2"
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.30.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "codyssey-b3-1"
+          }
+        ]
+      }
+    },
+    "Subnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "CidrBlock": "10.30.1.0/24",
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "codyssey-b3-1"
+          }
+        ]
+      }
+    },
+    "Gateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "codyssey-b3-1"
+          }
+        ]
+      }
+    },
+    "Attachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "InternetGatewayId": {
+          "Ref": "Gateway"
+        }
+      }
+    },
+    "RouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "codyssey-b3-1"
+          }
+        ]
+      }
+    },
+    "DefaultRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "Gateway"
+        }
+      },
+      "DependsOn": "Attachment"
+    },
+    "RouteAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "Subnet"
+        },
+        "RouteTableId": {
+          "Ref": "RouteTable"
+        }
+      }
+    },
+    "WebSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "GroupDescription": "HTTP public; SSH from operator only",
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "codyssey-b3-1"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIp": {
+              "Ref": "SshCidr"
+            }
+          }
+        ]
+      }
+    },
+    "WebInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": {
+          "Ref": "AmiId"
+        },
+        "InstanceType": "t3.micro",
+        "KeyName": {
+          "Ref": "KeyName"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "codyssey-b3-1"
+          }
+        ],
+        "MetadataOptions": {
+          "HttpTokens": "required",
+          "HttpEndpoint": "enabled"
+        },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": 8,
+              "VolumeType": "gp3",
+              "Encrypted": true,
+              "DeleteOnTermination": true
+            }
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeviceIndex": "0",
+            "AssociatePublicIpAddress": true,
+            "SubnetId": {
+              "Ref": "Subnet"
+            },
+            "GroupSet": [
+              {
+                "Ref": "WebSecurityGroup"
+              }
+            ]
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\nset -euo pipefail\ndnf install -y nginx\ncat > /etc/nginx/conf.d/codyssey.conf <<'NGINX'\nserver {\n    listen 80;\n    server_name _;\n    root /usr/share/nginx/codyssey;\n    location = /health {\n        default_type text/plain;\n        return 200 \"OK\\n\";\n    }\n    location / {\n        try_files $uri $uri/ =404;\n    }\n}\nNGINX\n# \ubc30\ud3ec\ud310 \uae30\ubcf8 server \ube14\ub85d\uc758 \ub8e8\ud2b8\ub3c4 \uac19\uc740 \ud398\uc774\uc9c0\ub97c \ud45c\uc2dc\ud558\ub3c4\ub85d \ubc30\uce58\ud55c\ub2e4.\nmkdir -p /usr/share/nginx/codyssey\ncat > /usr/share/nginx/codyssey/index.html <<'HTML'\n<!doctype html>\n<html lang=\"ko\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width\">\n<title>Hello Cloud</title>\n<style>body{font:18px system-ui;max-width:720px;margin:12vh auto;padding:24px;background:#f5f7fb;color:#15263e}h1{font-size:48px}a{color:#2456b8}</style>\n<h1>Hello Cloud</h1><p>\uc11c\uc6b8 \ub9ac\uc804\uc758 VPC\uc640 EC2\uc5d0\uc11c \uc81c\uacf5\ud558\ub294 \uc6f9\ud398\uc774\uc9c0\uc785\ub2c8\ub2e4.</p>\n<p><a href=\"/health\">\uc11c\ube44\uc2a4 \uc0c1\ud0dc \ud655\uc778</a></p></html>\nHTML\n# \uae30\ubcf8 \uc124\uc815 \ub300\uc2e0 \uc2e4\uc2b5\uc6a9 server \ud55c \uac1c\ub9cc \ub85c\ub4dc\ud55c\ub2e4.\ncat > /etc/nginx/nginx.conf <<'NGINX'\nuser nginx;\nworker_processes auto;\nerror_log /var/log/nginx/error.log;\npid /run/nginx.pid;\nevents { worker_connections 1024; }\nhttp {\n    include /etc/nginx/mime.types;\n    access_log /var/log/nginx/access.log;\n    include /etc/nginx/conf.d/*.conf;\n}\nNGINX\nnginx -t\nsystemctl enable --now nginx\ncurl --fail --max-time 10 http://localhost/health\n"
+        }
+      },
+      "DependsOn": [
+        "DefaultRoute",
+        "RouteAssociation"
+      ]
+    }
+  },
+  "Outputs": {
+    "PublicIp": {
+      "Value": {
+        "Fn::GetAtt": [
+          "WebInstance",
+          "PublicIp"
+        ]
+      }
+    },
+    "InstanceId": {
+      "Value": {
+        "Ref": "WebInstance"
+      }
+    },
+    "VpcId": {
+      "Value": {
+        "Ref": "Vpc"
+      }
+    },
+    "HealthUrl": {
+      "Value": {
+        "Fn::Sub": "http://${WebInstance.PublicIp}/health"
+      }
+    }
+  }
+}
