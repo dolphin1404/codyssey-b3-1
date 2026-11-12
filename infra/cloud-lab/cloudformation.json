@@ -1,0 +1,494 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Isolated Seoul cloud lab: public Nginx showcase of the existing ClipIt Vercel app, plus local /health. No app/backend migration.",
+  "Metadata": {
+    "CloudLab": "clip-it-assignment",
+    "Upstream": "https://cbnu-clip-it.vercel.app"
+  },
+  "Parameters": {
+    "AmazonLinuxAmiId": {
+      "Type": "AWS::EC2::Image::Id",
+      "Description": "Seoul Amazon-owned AL2023 x86_64 AMI resolved and checked by lab.sh."
+    },
+    "SshAllowedCidr": {
+      "Type": "String",
+      "Description": "Learner's current public IPv4 /32 only. Never 0.0.0.0/0.",
+      "AllowedPattern": "^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])\\.){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])/32$",
+      "ConstraintDescription": "Provide a single valid IPv4 address with /32."
+    },
+    "ExistingKeyPairName": {
+      "Type": "String",
+      "Default": "",
+      "MaxLength": 255,
+      "Description": "Existing Seoul EC2 key pair name; mutually exclusive with SshPublicKeyMaterial."
+    },
+    "SshPublicKeyMaterial": {
+      "Type": "String",
+      "Default": "",
+      "NoEcho": true,
+      "AllowedPattern": "^$|^ssh-(rsa|ed25519) [A-Za-z0-9+/]+={0,3}( [^\\r\\n]*)?$",
+      "Description": "OpenSSH public key only; imports a lab-owned key pair. Never paste a private key."
+    }
+  },
+  "Rules": {
+    "ExactlyOneSshKey": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Or": [
+              {
+                "Fn::And": [
+                  {
+                    "Fn::Equals": [
+                      {
+                        "Ref": "ExistingKeyPairName"
+                      },
+                      ""
+                    ]
+                  },
+                  {
+                    "Fn::Not": [
+                      {
+                        "Fn::Equals": [
+                          {
+                            "Ref": "SshPublicKeyMaterial"
+                          },
+                          ""
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "Fn::And": [
+                  {
+                    "Fn::Not": [
+                      {
+                        "Fn::Equals": [
+                          {
+                            "Ref": "ExistingKeyPairName"
+                          },
+                          ""
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Fn::Equals": [
+                      {
+                        "Ref": "SshPublicKeyMaterial"
+                      },
+                      ""
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "Supply exactly one existing key pair or one OpenSSH public key."
+        }
+      ]
+    }
+  },
+  "Conditions": {
+    "ImportPublicKey": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "SshPublicKeyMaterial"
+            },
+            ""
+          ]
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "LabVpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.20.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-vpc"
+            }
+          },
+          {
+            "Key": "CloudLab",
+            "Value": "clip-it-assignment"
+          },
+          {
+            "Key": "LabStack",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ]
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-igw"
+            }
+          },
+          {
+            "Key": "CloudLab",
+            "Value": "clip-it-assignment"
+          },
+          {
+            "Key": "LabStack",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ]
+      }
+    },
+    "GatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "LabVpc"
+        },
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "PublicSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "LabVpc"
+        },
+        "CidrBlock": "10.20.1.0/24",
+        "MapPublicIpOnLaunch": true,
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Fn::GetAZs": {
+                "Ref": "AWS::Region"
+              }
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-public-subnet"
+            }
+          },
+          {
+            "Key": "CloudLab",
+            "Value": "clip-it-assignment"
+          },
+          {
+            "Key": "LabStack",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ]
+      }
+    },
+    "PublicRouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "LabVpc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-public-routes"
+            }
+          },
+          {
+            "Key": "CloudLab",
+            "Value": "clip-it-assignment"
+          },
+          {
+            "Key": "LabStack",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ]
+      }
+    },
+    "DefaultInternetRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "GatewayAttachment",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "PublicRouteAssociation": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicSubnet"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRouteTable"
+        }
+      }
+    },
+    "WebSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "ClipIt lab: public HTTP; learner public IPv4 /32 SSH only",
+        "VpcId": {
+          "Ref": "LabVpc"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-web-sg"
+            }
+          },
+          {
+            "Key": "CloudLab",
+            "Value": "clip-it-assignment"
+          },
+          {
+            "Key": "LabStack",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Public assignment website and health"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIp": {
+              "Ref": "SshAllowedCidr"
+            },
+            "Description": "Learner current public IPv4 only"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Package installation, DNS, HTTPS origin"
+          }
+        ]
+      }
+    },
+    "ImportedSshKey": {
+      "Type": "AWS::EC2::KeyPair",
+      "Condition": "ImportPublicKey",
+      "Properties": {
+        "KeyName": {
+          "Fn::Sub": "${AWS::StackName}-ssh"
+        },
+        "PublicKeyMaterial": {
+          "Ref": "SshPublicKeyMaterial"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-ssh"
+            }
+          },
+          {
+            "Key": "CloudLab",
+            "Value": "clip-it-assignment"
+          },
+          {
+            "Key": "LabStack",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ]
+      }
+    },
+    "WebInstance": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn": [
+        "GatewayAttachment",
+        "DefaultInternetRoute",
+        "PublicRouteAssociation"
+      ],
+      "Properties": {
+        "ImageId": {
+          "Ref": "AmazonLinuxAmiId"
+        },
+        "InstanceType": "t3.micro",
+        "KeyName": {
+          "Fn::If": [
+            "ImportPublicKey",
+            {
+              "Ref": "ImportedSshKey"
+            },
+            {
+              "Ref": "ExistingKeyPairName"
+            }
+          ]
+        },
+        "CreditSpecification": {
+          "CPUCredits": "standard"
+        },
+        "Monitoring": false,
+        "MetadataOptions": {
+          "HttpTokens": "required",
+          "HttpEndpoint": "enabled",
+          "HttpPutResponseHopLimit": 1
+        },
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": 8,
+              "VolumeType": "gp3",
+              "Encrypted": true,
+              "DeleteOnTermination": true
+            }
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeviceIndex": "0",
+            "SubnetId": {
+              "Ref": "PublicSubnet"
+            },
+            "GroupSet": [
+              {
+                "Ref": "WebSecurityGroup"
+              }
+            ],
+            "AssociatePublicIpAddress": true,
+            "DeleteOnTermination": true
+          }
+        ],
+        "PropagateTagsToVolumeOnCreation": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-web"
+            }
+          },
+          {
+            "Key": "CloudLab",
+            "Value": "clip-it-assignment"
+          },
+          {
+            "Key": "LabStack",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\nset -euo pipefail\ndnf install -y nginx ca-certificates\nln -sf /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/certs/ca-certificates.crt\n# Replace the packaged default server; it otherwise competes on port 80.\ncat > /etc/nginx/nginx.conf <<'NGINX_MAIN'\nuser nginx;\nworker_processes auto;\nerror_log /var/log/nginx/error.log;\npid /run/nginx.pid;\ninclude /usr/share/nginx/modules/*.conf;\nevents { worker_connections 1024; }\nhttp {\n    include /etc/nginx/mime.types;\n    default_type application/octet-stream;\n    sendfile on;\n    keepalive_timeout 65;\n    access_log /var/log/nginx/access.log;\n    include /etc/nginx/conf.d/*.conf;\n}\nNGINX_MAIN\ncat > /etc/nginx/conf.d/cloud-lab.conf <<'NGINX_LAB'\n# Included inside nginx http {} (EC2 and the local Docker check share this file).\n# Public showcase proxy only; account/reader/admin paths go to the HTTPS origin.\nserver {\n    listen 80 default_server;\n    server_name _;\n    server_tokens off;\n\n    proxy_http_version 1.1;\n    proxy_set_header Host cbnu-clip-it.vercel.app;\n    proxy_set_header Connection \"\";\n    proxy_set_header Cookie \"\";\n    proxy_set_header Authorization \"\";\n    proxy_hide_header Set-Cookie;\n    proxy_set_header X-Real-IP $remote_addr;\n    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n    proxy_set_header X-Forwarded-Host $host;\n    proxy_set_header X-Forwarded-Proto $scheme;\n    proxy_ssl_server_name on;\n    proxy_ssl_name cbnu-clip-it.vercel.app;\n    proxy_ssl_verify on;\n    proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;\n    proxy_ssl_verify_depth 3;\n    proxy_connect_timeout 10s;\n    proxy_read_timeout 60s;\n    proxy_redirect https://cbnu-clip-it.vercel.app/ /;\n\n    # Health is served locally, even when Vercel or the application is unavailable.\n    location = /health {\n        default_type text/plain;\n        return 200 \"OK\\n\";\n    }\n\n    location = / {\n        limit_except GET { deny all; }\n        proxy_pass https://cbnu-clip-it.vercel.app;\n    }\n\n    # Homepage data: GET/HEAD only, with no cookies or authorization forwarded.\n    location = /api/works {\n        limit_except GET { deny all; }\n        proxy_pass https://cbnu-clip-it.vercel.app;\n    }\n\n    location ^~ /_next/static/ {\n        limit_except GET { deny all; }\n        proxy_pass https://cbnu-clip-it.vercel.app;\n    }\n\n    location = /_next/image {\n        limit_except GET { deny all; }\n        proxy_pass https://cbnu-clip-it.vercel.app;\n    }\n\n    location ~ ^/(favicon\\.ico|[^/]+\\.(svg|png|jpe?g|webp|gif|woff2?))$ {\n        limit_except GET { deny all; }\n        proxy_pass https://cbnu-clip-it.vercel.app;\n    }\n\n    # Fixed HTTPS host; preserve path/query without permitting an open redirect.\n    location / {\n        return 308 https://cbnu-clip-it.vercel.app$request_uri;\n    }\n}\nNGINX_LAB\nnginx -t\nsystemctl enable --now nginx\ncurl --fail --silent http://127.0.0.1/health\n"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "Region": {
+      "Value": {
+        "Ref": "AWS::Region"
+      }
+    },
+    "VpcId": {
+      "Value": {
+        "Ref": "LabVpc"
+      }
+    },
+    "SubnetId": {
+      "Value": {
+        "Ref": "PublicSubnet"
+      }
+    },
+    "InternetGatewayId": {
+      "Value": {
+        "Ref": "InternetGateway"
+      }
+    },
+    "RouteTableId": {
+      "Value": {
+        "Ref": "PublicRouteTable"
+      }
+    },
+    "SecurityGroupId": {
+      "Value": {
+        "Ref": "WebSecurityGroup"
+      }
+    },
+    "InstanceId": {
+      "Value": {
+        "Ref": "WebInstance"
+      }
+    },
+    "PublicIp": {
+      "Value": {
+        "Fn::GetAtt": [
+          "WebInstance",
+          "PublicIp"
+        ]
+      }
+    },
+    "WebsiteUrl": {
+      "Value": {
+        "Fn::Sub": "http://${WebInstance.PublicIp}/"
+      }
+    },
+    "HealthUrl": {
+      "Value": {
+        "Fn::Sub": "http://${WebInstance.PublicIp}/health"
+      }
+    },
+    "SshKeyPairName": {
+      "Value": {
+        "Fn::If": [
+          "ImportPublicKey",
+          {
+            "Ref": "ImportedSshKey"
+          },
+          {
+            "Ref": "ExistingKeyPairName"
+          }
+        ]
+      }
+    },
+    "OriginUrl": {
+      "Value": "https://cbnu-clip-it.vercel.app"
+    }
+  }
+}

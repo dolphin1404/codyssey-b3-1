@@ -1,0 +1,27 @@
+digraph Cloud {
+  graph [rankdir=TB, bgcolor="white", pad=0.5, label="Codyssey B3-1 — planned AWS architecture (ap-northeast-2)", labelloc=t, fontsize=20];
+  node [shape=box, style="rounded,filled", fillcolor="#edf3fb", fontname="DejaVu Sans", margin=0.18];
+  edge [fontname="DejaVu Sans", fontsize=11];
+  client [label="Internet client"];
+  operator [label="Operator public IPv4 /32"];
+  iam [label="Lab IAM user / role\nEC2 + CloudFormation only\nNo AdministratorAccess"];
+  subgraph cluster_vpc {
+    label="VPC 10.30.0.0/16"; color="#4377b8";
+    igw [label="Internet Gateway"];
+    route [label="Route Table\n0.0.0.0/0 → IGW"];
+    subgraph cluster_subnet {
+      label="Public Subnet 10.30.1.0/24"; color="#80a5d4";
+      sg [label="Security Group\nHTTP 80: 0.0.0.0/0\nSSH 22: operator /32"];
+      ec2 [label="EC2 t3.micro / Amazon Linux 2023\nNginx :80 — GET /health → OK\nAuto-assigned public IPv4"];
+      ebs [label="Encrypted EBS gp3 8 GiB\nDeleteOnTermination=true"];
+    }
+    route -> igw [label="default route"];
+    sg -> ec2 [label="allowed inbound"];
+    ec2 -> ebs [dir=none];
+  }
+  client -> igw [label="HTTP 80"];
+  igw -> sg;
+  operator -> sg [label="SSH 22"];
+  iam -> ec2 [style=dashed, label="management API"];
+  ec2 -> route [label="outbound"];
+}

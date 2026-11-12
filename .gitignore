@@ -3,4 +3,7 @@ __pycache__/
 *.pem
 *.key
 .env
+.env*
+.aws/
 evidence-private/
+infra/cloud-lab/.local/

@@ -1,0 +1,85 @@
+{
+  "scope": "Final Nginx configuration, local Docker only; not EC2 external proof",
+  "utc": "2026-10-03T10:03:47.283563+00:00",
+  "kst": "2026-10-03T19:03:47.283563+09:00",
+  "checks": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:18080/health",
+      "expected_status": 200,
+      "actual_status": 200,
+      "body": "OK",
+      "redirect": null,
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:18080/",
+      "expected_status": 200,
+      "actual_status": 200,
+      "body": null,
+      "redirect": null,
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:18080/api/works",
+      "expected_status": 200,
+      "actual_status": 200,
+      "body": "[]",
+      "redirect": null,
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:18080/login",
+      "expected_status": 308,
+      "actual_status": 308,
+      "body": null,
+      "redirect": "https://cbnu-clip-it.vercel.app/login",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:18080/signup",
+      "expected_status": 308,
+      "actual_status": 308,
+      "body": null,
+      "redirect": "https://cbnu-clip-it.vercel.app/signup",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:18080/admin",
+      "expected_status": 308,
+      "actual_status": 308,
+      "body": null,
+      "redirect": "https://cbnu-clip-it.vercel.app/admin",
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:18080/api/admin/me",
+      "expected_status": 308,
+      "actual_status": 308,
+      "body": null,
+      "redirect": "https://cbnu-clip-it.vercel.app/api/admin/me",
+      "passed": true
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:18080/api/works",
+      "expected_status": 403,
+      "actual_status": 403,
+      "body": null,
+      "redirect": null,
+      "passed": true
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:18080/_next/static/media/5611c55482296524.p.woff2",
+      "actual_status": 200,
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,218 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ImportTaggedPublicSshKeyOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:ImportKeyPair"
+      ],
+      "Resource": "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:key-pair/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "aws:RequestTag/CloudLab": "clip-it-assignment"
+        }
+      }
+    },
+    {
+      "Sid": "DeleteImportedLabKey",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DeleteKeyPair"
+      ],
+      "Resource": "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:key-pair/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "ec2:ResourceTag/CloudLab": "clip-it-assignment"
+        }
+      }
+    },
+    {
+      "Sid": "ImportedKeyDeletionProbe",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:DeleteParameter"
+      ],
+      "Resource": "arn:aws:ssm:ap-northeast-2:ACCOUNT_ID:parameter/ec2/keypair/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2"
+        },
+        "ForAnyValue:StringEquals": {
+          "aws:CalledVia": "cloudformation.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "RunAmazonOwnedAmi",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances"
+      ],
+      "Resource": "arn:aws:ec2:ap-northeast-2::image/ami-*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "ec2:Owner": "137112412989"
+        }
+      }
+    },
+    {
+      "Sid": "RunOnlyMicroTaggedLabInstance",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances"
+      ],
+      "Resource": "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "aws:RequestTag/CloudLab": "clip-it-assignment",
+          "ec2:InstanceType": "t3.micro",
+          "ec2:Tenancy": "default",
+          "ec2:MetadataHttpTokens": "required"
+        }
+      }
+    },
+    {
+      "Sid": "RunOnlyEncryptedSmallGp3",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances"
+      ],
+      "Resource": "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:volume/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "aws:RequestTag/CloudLab": "clip-it-assignment",
+          "ec2:VolumeType": "gp3"
+        },
+        "Bool": {
+          "ec2:Encrypted": "true"
+        },
+        "NumericLessThanEquals": {
+          "ec2:VolumeSize": "8"
+        }
+      }
+    },
+    {
+      "Sid": "RunWithLabSubnetAndSecurityGroup",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances"
+      ],
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:subnet/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:security-group/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "ec2:ResourceTag/CloudLab": "clip-it-assignment"
+        }
+      }
+    },
+    {
+      "Sid": "UseSelectedExistingOrImportedSshKey",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances"
+      ],
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:key-pair/EXISTING_KEY_PAIR_NAME",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:key-pair/clip-it-cloud-lab-*-ssh"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2"
+        }
+      }
+    },
+    {
+      "Sid": "PrimaryInterfaceDuringLaunchOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RunInstances"
+      ],
+      "Resource": "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:network-interface/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2"
+        }
+      }
+    },
+    {
+      "Sid": "ManageTaggedLabInstance",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:ModifyInstanceCreditSpecification",
+        "ec2:ModifyInstanceAttribute",
+        "ec2:TerminateInstances"
+      ],
+      "Resource": "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "ec2:ResourceTag/CloudLab": "clip-it-assignment"
+        }
+      }
+    },
+    {
+      "Sid": "TagOnLabCreation",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateTags"
+      ],
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:vpc/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:internet-gateway/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:subnet/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:route-table/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:security-group/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:key-pair/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:instance/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:volume/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "aws:RequestTag/CloudLab": "clip-it-assignment",
+          "ec2:CreateAction": [
+            "CreateVpc",
+            "CreateInternetGateway",
+            "CreateSubnet",
+            "CreateRouteTable",
+            "CreateSecurityGroup",
+            "ImportKeyPair",
+            "RunInstances"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "CloudFormationTagsOnOwnedLabResources",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateTags"
+      ],
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:vpc/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:internet-gateway/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:subnet/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:route-table/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:security-group/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:key-pair/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:instance/*",
+        "arn:aws:ec2:ap-northeast-2:ACCOUNT_ID:volume/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-2",
+          "ec2:ResourceTag/CloudLab": "clip-it-assignment"
+        }
+      }
+    }
+  ]
+}
