@@ -1,5 +1,11 @@
 # AWS 웹 서비스 배포
 
+## CLIP-IT 프로젝트로 진행
+
+이번 과제는 기존 [CLIP-IT 프로젝트](https://github.com/SW-Clip-It/Capstone_FE)의 [서울 EC2 실습 구성 및 제출 문서](https://github.com/SW-Clip-It/Capstone_FE/tree/0c7cb1404fa97db3f8f1196524e82e4195212955)로 이어서 진행합니다. [운영 사이트](https://cbnu-clip-it.vercel.app)도 확인할 수 있습니다.
+
+현재는 EC2 배포 구성과 로컬 검증까지 완료했으며, **실제 AWS 배포·외부 접속 증빙은 미완료**입니다. 아래는 이전에 준비한 독립 실습 구성입니다.
+
 서울 리전 VPC/Public Subnet/IGW/Route Table/보안 그룹/EC2를 구성하는
 CloudFormation 템플릿과 Nginx 설치 스크립트다. 외부 검증은 **B: GET /health**를 사용한다.
 
