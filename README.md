@@ -4,10 +4,12 @@ CLIP-IT은 고전 문학 원문과 AI 영상 장면을 함께 감상하는 졸�
 
 - 졸업작품 저장소: [SW-Clip-It/Capstone_FE](https://github.com/SW-Clip-It/Capstone_FE)
 - 기존 운영 서비스: [CLIP-IT](https://cbnu-clip-it.vercel.app)
-- 기존 프로젝트의 EC2 구성 참고: [고정된 준비 기록](https://github.com/SW-Clip-It/Capstone_FE/tree/0c7cb1404fa97db3f8f1196524e82e4195212955)
+- 기존 프로젝트의 EC2 구성 참고: [실제 EC2 배포·검증 고정 기록](https://github.com/SW-Clip-It/Capstone_FE/tree/4d87cd7b160619a6cab576affbbb54d97d9ea81b)
 - 원래 과제 양식 1~8번 적용: [CLIP-IT 과제 명세](docs/assignment-spec.md)
 
-**현재 이 제출본에는 배포 구성과 로컬 검증 기록이 있습니다. 실제 AWS 배포·외부 접속·삭제 증빙은 별도로 진행하는 배포 작업의 결과를 반영해야 합니다.**
+**2026-11-12 20:35 KST, 기존 CLIP-IT에 서울 EC2를 추가하고 실제 외부 HTTP·SSH 및 인프라 검사 19개를 모두 통과했습니다. 접속 주소는 [EC2](http://52.79.174.1/), 검증 주소는 [/health](http://52.79.174.1/health)입니다. 실제 접속 스크린샷은 브라우저 캡처 오류로 아직 미첨부이며, 2026-11-13 00:05 KST에 임시 인프라를 정리하도록 예약했습니다.**
+
+이번 실제 실행의 최종 근거는 [기존 CLIP-IT 프로젝트의 고정 제출본](https://github.com/SW-Clip-It/Capstone_FE/tree/4d87cd7b160619a6cab576affbbb54d97d9ea81b)에 있습니다. 이 저장소의 이전 설계·로컬 기록과 구분합니다. 제출본에는 [실제 검증 결과](https://github.com/SW-Clip-It/Capstone_FE/blob/4d87cd7b160619a6cab576affbbb54d97d9ea81b/docs/cloud-lab/verification-summary.redacted.json), [외부 HTTP 응답](https://github.com/SW-Clip-It/Capstone_FE/blob/4d87cd7b160619a6cab576affbbb54d97d9ea81b/docs/cloud-lab/external-health.txt), [AWS 권한 오류 해결 보고서](https://github.com/SW-Clip-It/Capstone_FE/blob/4d87cd7b160619a6cab576affbbb54d97d9ea81b/docs/troubleshooting.md), [현재 정리 체크리스트](https://github.com/SW-Clip-It/Capstone_FE/blob/4d87cd7b160619a6cab576affbbb54d97d9ea81b/docs/cleanup-checklist.md)를 연결했습니다.
 
 ## CLIP-IT 적용 범위
 
@@ -23,35 +25,35 @@ EC2의 공개 홈·작품 목록·정적 파일은 기존 CLIP-IT 화면을 HTTP
 
 완료 기준은 EC2 접속 지점의 네트워크·웹 서버 동작입니다. 앱 전체·DB의 EC2 이전과 AI 영상 생성 품질 검증은 포함하지 않습니다.
 
-![CLIP-IT 과제 아키텍처](docs/architecture.png)
+![실제 CLIP-IT 서울 EC2 구성](https://raw.githubusercontent.com/SW-Clip-It/Capstone_FE/4d87cd7b160619a6cab576affbbb54d97d9ea81b/docs/architecture.png)
 
 ## 필수 제출물
 
 | 과제 요구 | 제출 파일 / 기록 | 이 제출본의 상태 |
 | --- | --- | --- |
-| 아키텍처 1장 | [docs/architecture.png](docs/architecture.png) | CLIP-IT 운영 영역과 서울 실습 영역을 구분한 설계 |
-| 외부 접속 증빙 | 아래 B 방식, 실제 IP/URL과 스크린샷 | 실제 EC2 증빙 반영 대기 |
-| 트러블슈팅 보고서 | [docs/troubleshooting.md](docs/troubleshooting.md) | 실제 로컬 재현 기록과 EC2 추가 기록 항목 |
-| 리소스 정리 체크리스트 | [docs/cleanup-checklist.md](docs/cleanup-checklist.md) | 실제 삭제 조회 결과 반영 대기 |
+| 아키텍처 1장 | [실제 구성 PNG](https://github.com/SW-Clip-It/Capstone_FE/blob/4d87cd7b160619a6cab576affbbb54d97d9ea81b/docs/architecture.png) | 서울 EC2 배포·검증 당시 구성 |
+| 외부 접속 증빙 | 아래 B 방식 및 [실제 HTTP 응답](https://github.com/SW-Clip-It/Capstone_FE/blob/4d87cd7b160619a6cab576affbbb54d97d9ea81b/docs/cloud-lab/external-health.txt) | HTTP 200·OK 확인, 실제 스크린샷 미첨부 |
+| 트러블슈팅 보고서 | [실제 AWS 오류 해결](https://github.com/SW-Clip-It/Capstone_FE/blob/4d87cd7b160619a6cab576affbbb54d97d9ea81b/docs/troubleshooting.md) | AMI 권한 조건 수정 후 재배포·검증 통과 |
+| 리소스 정리 체크리스트 | [현재 정리 기록](https://github.com/SW-Clip-It/Capstone_FE/blob/4d87cd7b160619a6cab576affbbb54d97d9ea81b/docs/cleanup-checklist.md) | 첫 실패 스택 정리 완료, 성공 스택 자정 이후 정리 예약 |
 
 리소스 ID·접속 URL·검증 시각은 [배포·검증 기록](docs/deployment-record.md)에 모읍니다. 실행하지 않은 항목은 완료로 표시하지 않습니다.
 
 ## 외부 접속 검증 — B 방식
 
-선택 방식은 **B: `GET http://<EC2_PUBLIC_IP>/health`**입니다. 외부 PC에서 실행합니다.
+선택 방식은 **B: `GET http://52.79.174.1/health`**입니다. 외부 PC에서 실행합니다.
 
 ```bash
-curl --fail --include --max-time 15 http://<EC2_PUBLIC_IP>/health
+curl --fail --include --max-time 15 http://52.79.174.1/health
 ```
 
 기대 결과는 HTTP `200`, `Content-Type: text/plain`, 본문 `OK`입니다. 실제 URL/IP와 응답이 함께 보이는 스크린샷을 `docs/evidence/external-health.png`에 저장하고 배포 기록에 연결합니다.
 
 | 접속 정보 | 값 |
 | --- | --- |
-| 검증 당시 EC2 공인 IP / URL | 기록 대기 |
-| KST 시각 / HTTP 상태 / 본문 | 기록 대기 |
-| 외부 접속 스크린샷 | 실제 배포 후 첨부 |
-| SSH / localhost `/` 200 / HTTPS 아웃바운드 | 실제 EC2 검증 후 첨부 |
+| 검증 당시 EC2 공인 IP / URL | `52.79.174.1` / `http://52.79.174.1/health` |
+| KST 시각 / HTTP 상태 / 본문 | 2026-11-12 20:35 / HTTP 200 / `OK` + 줄바꿈 |
+| 외부 접속 스크린샷 | 캡처 도구 오류로 미첨부 — 실제 화면 캡처 필요 |
+| SSH / localhost `/` 200 / HTTPS 아웃바운드 | 실제 EC2 검증 모두 통과 |
 
 기존 Vercel 주소와 로컬 Docker 응답은 EC2 외부 접속 증빙을 대신하지 않습니다. `/health`만으로 DB·로그인·영상 재생 상태를 판정하지 않습니다.
 
@@ -65,7 +67,7 @@ curl --fail --include --max-time 15 http://<EC2_PUBLIC_IP>/health
 4. 실제 AWS 출력과 외부 접속 화면을 배포 기록에 반영합니다.
 5. CLI `deploy`로 생성했다면 **생성 기록이 있는 같은 체크아웃**에서 정확한 StackId를 확인해 `lab.sh cleanup`을 실행합니다. 콘솔에서 생성했다면 정확한 실습 StackId와 리소스 목록을 확인해 콘솔에서 해당 스택을 삭제합니다. 두 경우 모두 ID별 잔여 조회 후 정리 체크리스트를 완료합니다.
 
-이 문서 개정은 AWS 리소스를 생성하거나 기존 배포·복구 예약을 변경하지 않습니다. 기존 Vercel·도쿄 운영 리소스는 실습 정리 대상에서 제외합니다. 제출 문서와 검증 기록은 임시 인프라를 삭제한 뒤에도 보존합니다.
+실제 EC2와 네트워크 추가분은 2026-11-13 00:05 KST에 정리하도록 예약했습니다. 이후 위 EC2 주소는 사용하지 않으며, 고정 검증 기록을 확인합니다. 전용 IAM 사용자·정책 삭제에는 별도 관리자 인증이 필요합니다. 기존 Vercel·도쿄 운영 리소스는 실습 정리 대상에서 제외합니다. 제출 문서와 검증 기록은 임시 인프라를 삭제한 뒤에도 보존합니다.
 
 ## 증빙과 이전 구현
 
