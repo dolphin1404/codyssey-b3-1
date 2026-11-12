@@ -1,110 +1,27 @@
-digraph CLIP_IT {
-  graph [
-    rankdir=TB,
-    newrank=true,
-    bgcolor="#FFFFFF",
-    pad=0.38,
-    nodesep=0.42,
-    ranksep=0.66,
-    splines=polyline,
-    compound=true,
-    fontname="Noto Sans CJK KR",
-    fontsize=23,
-    fontcolor="#10243A",
-    labelloc=t,
-    label="CLIP-IT 졸업작품 × B3-1 클라우드 과제\n제출용 설계 · 실제 배포 / 접속 증빙 별도",
-    dpi=145
-  ];
-  node [shape=box, style="rounded,filled", fontname="Noto Sans CJK KR", fontsize=12, color="#A7B7CA", fillcolor="#F5F8FC", fontcolor="#10243A", margin="0.20,0.13", penwidth=1.2];
-  edge [fontname="Noto Sans CJK KR", fontsize=10, color="#49627E", fontcolor="#314B68", arrowsize=0.7, penwidth=1.3];
-
-  client [label="인터넷 사용자\n브라우저 / curl", fillcolor="#EDF3FB"];
-
-
-  subgraph cluster_lab {
-    label="서울 과제 영역 · ap-northeast-2\n추가 구성 설계 · 과제 종료 시 이 영역만 정리";
-    labelloc=t;
-    fontsize=15;
-    color="#D69A30";
-    fontcolor="#805613";
-    style="rounded,dashed,filled";
-    fillcolor="#FFFBF1";
-    penwidth=1.6;
-    margin=20;
-
-    subgraph cluster_vpc {
-      label="VPC 10.20.0.0/16";
-      color="#DDBE83";
-      style="rounded,filled";
-      fillcolor="#FFFDF8";
-      fontsize=14;
-      margin=18;
-
-      igw [label="Internet Gateway (IGW)\nVPC에 연결", fillcolor="#FFF1CE", color="#D5A44A"];
-      route [label="Public Route Table\n0.0.0.0/0 → IGW\nPublic Subnet에 연결", fillcolor="#FFF6DF", color="#D5A44A", fontsize=11];
-
-
-      subgraph cluster_subnet {
-        label="Public Subnet 10.20.1.0/24";
-        color="#DCC89F";
-        style="rounded,filled";
-        fillcolor="#FFFEFB";
-        fontsize=13;
-        margin=18;
-
-        sg [label="Security Group · 상태 기반 방화벽\nTCP 80: 0.0.0.0/0\nTCP 22: 실습자 공인 IPv4/32", fillcolor="#FFF1CE", color="#D5A44A"];
-        ec2 [label="EC2 · Amazon Linux 2023\nt3.micro · 자동 할당 공인 IPv4\nNGINX :80\n\nGET /health → 200 OK\nNGINX가 EC2 안에서 직접 응답", fillcolor="#FFE2A8", color="#C98C24", penwidth=1.7];
-        ebs [label="EBS gp3 8 GiB · 암호화\n인스턴스 종료 시 삭제", fillcolor="#FFF6DF", color="#D5A44A", fontsize=11];
-      }
-      igw -> sg [dir=both, label="HTTP 요청 / 응답"];
-      sg -> ec2 [dir=both, label="허용된 TCP 80"];
-      igw -> route [style=dashed, arrowhead=none, label="기본 경로"];
-      ec2 -> ebs [dir=none, label="루트 디스크"];
+digraph Cloud {
+  graph [rankdir=TB, bgcolor="white", pad=0.5, label="Codyssey B3-1 — planned AWS architecture (ap-northeast-2)", labelloc=t, fontsize=20];
+  node [shape=box, style="rounded,filled", fillcolor="#edf3fb", fontname="DejaVu Sans", margin=0.18];
+  edge [fontname="DejaVu Sans", fontsize=11];
+  client [label="Internet client"];
+  operator [label="Operator public IPv4 /32"];
+  iam [label="Lab IAM user / role\nEC2 + CloudFormation only\nNo AdministratorAccess"];
+  subgraph cluster_vpc {
+    label="VPC 10.30.0.0/16"; color="#4377b8";
+    igw [label="Internet Gateway"];
+    route [label="Route Table\n0.0.0.0/0 → IGW"];
+    subgraph cluster_subnet {
+      label="Public Subnet 10.30.1.0/24"; color="#80a5d4";
+      sg [label="Security Group\nHTTP 80: 0.0.0.0/0\nSSH 22: operator /32"];
+      ec2 [label="EC2 t3.micro / Amazon Linux 2023\nNginx :80 — GET /health → OK\nAuto-assigned public IPv4"];
+      ebs [label="Encrypted EBS gp3 8 GiB\nDeleteOnTermination=true"];
     }
+    route -> igw [label="default route"];
+    sg -> ec2 [label="allowed inbound"];
+    ec2 -> ebs [dir=none];
   }
-
-  subgraph cluster_existing {
-    label="기존 CLIP-IT · 유지";
-    labeljust=r;
-    labelloc=t;
-    fontsize=15;
-    color="#7EABD0";
-    fontcolor="#235B87";
-    style="rounded,filled";
-    fillcolor="#F1F7FC";
-    penwidth=1.5;
-    margin=20;
-
-    browser_https [label="브라우저가 HTTPS 원본으로 이동\n인증 · 리더 · 관리자 경로", fillcolor="#E4F0FB", color="#7EABD0"];
-    vercel [label="기존 Vercel · Next.js 웹 / API\nhttps://cbnu-clip-it.vercel.app\n공개 홈 · 작품 목록 · 원본 서비스", fillcolor="#D8EAF8", color="#6097C3", penwidth=1.6];
-
-    subgraph cluster_tokyo {
-      label="도쿄 ap-northeast-1";
-      labeljust=l;
-      color="#A6C4DE";
-      style="rounded,filled";
-      fillcolor="#F9FCFF";
-      fontsize=13;
-      margin=16;
-      rds [label="RDS\n작품 · 장 · 생성 작업 DB", fillcolor="#E4F0FB"];
-      s3 [label="S3 · 비공개 저장소\n원문 · 스크립트 · 영상", fillcolor="#E4F0FB"];
-      cognito [label="Cognito\n사용자 인증", fillcolor="#E4F0FB"];
-
-    }
-    browser_https -> vercel [dir=both, label="HTTPS 직접 이용"];
-    vercel -> rds [dir=both, label="DB 조회 / 저장"];
-    vercel -> s3 [dir=both, headport=e, label="객체 / 서명 URL"];
-    vercel -> cognito [dir=both, label="인증 연동"];
-  }
-
-  {rank=same; igw; sg; ec2;}
-  client -> igw [dir=both, label="HTTP :80\n요청 ↓ / 응답 ↑"];
-  ec2 -> vercel [dir=both, label="공개 홈 · /api/works · 정적 자산\nGET/HEAD → HTTPS 프록시\n쿠키 / Authorization 전달 안 함", color="#287BB0", fontcolor="#235B87", minlen=2];
-  ec2 -> browser_https [label="HTTP 308\n원래 경로 / 쿼리 유지", color="#287BB0", fontcolor="#235B87", minlen=2];
-
-  note [shape=box, style="rounded,filled", fillcolor="#F4F5F7", color="#C2CAD4", fontsize=11, label="설계 기준: infra/cloud-lab/cloudformation.json · nginx.conf\n/health는 Vercel 상태와 무관하게 EC2에서 응답 · 애플리케이션 / DB 이전 없음\n정리 대상: 서울 과제 스택과 과제에서 만든 자원만 · 기존 Vercel / 도쿄 RDS·S3·Cognito 유지"];
-  ebs -> note [style=invis];
-  rds -> note [style=invis];
-  s3 -> note [style=invis];
-  cognito -> note [style=invis];
+  client -> igw [label="HTTP 80"];
+  igw -> sg;
+  operator -> sg [label="SSH 22"];
+  iam -> ec2 [style=dashed, label="management API"];
+  ec2 -> route [label="outbound"];
 }
