@@ -1,19 +1,53 @@
-# 실습 리소스 정리
+# CLIP-IT 과제 리소스 정리 체크리스트
 
-현재 상태: AWS 배포 전. 아래 항목은 실제 계정에서 확인 후 체크한다.
-미실행 항목을 종료/삭제 완료로 간주하지 않는다.
+대상은 **이번 실습에서 생성한 서울 `clip-it-cloud-lab-*` 스택의 정확한 리소스 ID**입니다. 기존 Vercel, 도쿄 RDS·Cognito·S3, 기존 운영 EC2와 졸업작품 데이터는 보존합니다.
 
-- [ ] 생성한 스택의 리소스 ID 목록 저장: `aws cloudformation list-stack-resources --stack-name codyssey-b3-1`
-- [ ] `python3 manage.py --profile PROFILE cleanup --confirm-stack codyssey-b3-1` 성공 출력 저장
-- [ ] EC2 ID를 describe-instances로 조회하여 terminated 확인
-- [ ] 기록한 EBS ID가 describe-volumes에서 더 이상 존재하지 않는지 확인
-- [ ] Elastic IP: 이 템플릿은 생성하지 않음. 수동 할당했다면 해당 Allocation ID만 release
-- [ ] Internet Gateway detach 및 삭제 확인
-- [ ] Subnet, Route Table, Security Group, VPC 삭제 확인
-- [ ] 별도로 만든 실습 키페어 삭제. 기존 공유 키페어는 유지
-- [ ] NAT Gateway, ELB, RDS: 이 템플릿은 생성하지 않음. 별도 생성 여부 확인
-- [ ] Billing에서 사용량/크레딧 확인 (반영 지연이 있을 수 있음)
+이 제출본에는 아직 실제 삭제 조회 결과가 첨부되지 않았습니다. 체크되지 않은 항목은 미완료 기록입니다.
 
-종료(stop)는 삭제(terminate)가 아니다. EBS와 퍼블릭 IPv4 등 잔여 비용 항목도 확인한다.
-스택 삭제가 실패하면 CloudFormation Events의 실패 리소스를 확인하고 원인을 해결한다.
-계정 전체 리소스를 일괄 삭제하지 않는다.
+## 정리 전 기록
+
+| 항목 | 실제 값 |
+| --- | --- |
+| 리전 | `ap-northeast-2` |
+| StackId / 스택 이름 | 기록 대기 |
+| IAM 사용자/Role / 새 정책 | 기록 대기 |
+| EC2 / EBS / SG ID | 기록 대기 |
+| VPC / Subnet / Route Table / IGW ID | 기록 대기 |
+| 키페어 / 새로 가져온 키 여부 | 기록 대기 |
+| EIP·NAT·ALB·RDS 등 수동 추가 | 기본 구성은 생성 안 함; 실제 조회 대기 |
+| 제출용 증거 저장 위치 | 기록 대기 |
+| 정리 시작 / 종료 시각 (KST) | 기록 대기 |
+
+## 정리와 확인
+
+1. 외부 접속·SSH·네트워크·IAM 증빙과 생성 당시 StackId/ID를 먼저 저장합니다.
+2. 계정·리전·태그·정확한 StackId를 확인합니다. CLI `deploy`로 만들었다면 생성 기록이 있는 같은 체크아웃에서 `infra/cloud-lab/lab.sh cleanup`을 실행합니다. 콘솔에서 만들었다면 정확한 실습 StackId와 리소스 탭을 확인해 콘솔에서 해당 스택만 삭제합니다. 로컬 생성 기록이 없는 스택에 CLI 정리를 강제로 적용하지 않습니다.
+3. 삭제 요청 뒤 실제 자원을 다시 조회하고 아래 표에 파일·시각을 남깁니다.
+4. 실패 로그는 보존합니다. 스택이 이미 사라졌다면 기록한 정확한 리소스 ID로 잔여를 확인합니다.
+
+| 완료 | 대상 | 완료 기준 | 실제 조회 근거 / 시각 |
+| --- | --- | --- | --- |
+| [ ] | EC2 | 해당 인스턴스 `terminated` | 기록 대기 |
+| [ ] | EBS | 루트·추가 볼륨 삭제, 미사용 실습 볼륨 없음 | 기록 대기 |
+| [ ] | Elastic IP | 미생성 확인 또는 해당 Allocation ID Release | 기록 대기 |
+| [ ] | Internet Gateway | 실습 VPC에서 Detach 후 삭제 | 기록 대기 |
+| [ ] | Subnet / Route Table / SG | 실습 하위 자원 삭제 | 기록 대기 |
+| [ ] | VPC | 실습 VPC 삭제 | 기록 대기 |
+| [ ] | 키페어 | 실습용으로 가져온 키만 삭제; 기존 키 보존 | 기록 대기 |
+| [ ] | NAT Gateway | 미생성 또는 실습 항목 삭제 확인 | 기록 대기 |
+| [ ] | ELB / ALB | 미생성 또는 실습 항목 삭제 확인 | 기록 대기 |
+| [ ] | 신규 실습 RDS | 미생성 또는 삭제·스냅샷 확인 | 기록 대기 |
+| [ ] | EBS 스냅샷 / AMI | 수동 생성·잔여 저장소 확인 | 기록 대기 |
+| [ ] | 임시 IAM 사용자·정책·키 | 이번 실습용 신규 항목만 회수/삭제 | 기록 대기 |
+| [ ] | Billing / Free Tier | 잔여 실습 자원·사용량·크레딧 확인 | 기록 대기 |
+
+EC2 `stopped`는 정리 완료가 아닙니다. EBS·공인 IPv4·스냅샷 잔여도 확인합니다. Billing 반영에는 지연이 있을 수 있어 자원 조회 근거와 비용 조회 시각을 함께 남깁니다.
+
+## 제출 자료 보존
+
+- [ ] README·배포 기록에 검증 당시 IP·URL·시각을 남겼습니다.
+- [ ] 접속 화면·삭제 근거에 비밀 키·토큰·비밀번호가 없습니다.
+- [ ] 실제 조회가 확인된 항목만 완료로 표시했습니다.
+- [ ] 종료된 실습 IP를 현재 운영 주소로 안내하지 않습니다.
+- [ ] 기존 CLIP-IT 운영 리소스를 삭제하지 않았습니다.
+- [ ] 제출 문서·도면·트러블슈팅·검증·정리 증거는 인프라 삭제 후에도 보존했습니다.

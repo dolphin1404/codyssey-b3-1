@@ -1,0 +1,7 @@
+# AWS account IDs, ARNs, public IPs, key names and raw command output stay local.
+.local/
+*.pem
+*.pub
+.env
+.env.*
+__pycache__/

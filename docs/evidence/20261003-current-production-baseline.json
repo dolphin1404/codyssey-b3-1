@@ -1,0 +1,79 @@
+{
+  "title": "Current production read-only baseline",
+  "checked_at_utc": "2026-10-03T09:56:11+00:00",
+  "checked_at_kst": "2026-10-03T18:56:11+09:00",
+  "origin": "https://cbnu-clip-it.vercel.app",
+  "hosting_provider": "Vercel",
+  "purpose": "Existing CLIP-IT production baseline only; this does not prove the AWS EC2 cloud-lab assignment.",
+  "assignment_external_proof": false,
+  "safety": "Unauthenticated GET requests only. No request credentials, cookies, tokens or raw response header dumps are recorded. Only selected non-sensitive response headers and minimal response summaries are retained.",
+  "checks": [
+    {
+      "path": "/",
+      "method": "GET",
+      "checked_at_utc": "2026-10-03T09:56:09+00:00",
+      "checked_at_kst": "2026-10-03T18:56:09+09:00",
+      "status": 200,
+      "final_url": "https://cbnu-clip-it.vercel.app/",
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Content-Length": "7463",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Server": "Vercel"
+      },
+      "response_summary": {
+        "html_response": true
+      }
+    },
+    {
+      "path": "/login",
+      "method": "GET",
+      "checked_at_utc": "2026-10-03T09:56:09+00:00",
+      "checked_at_kst": "2026-10-03T18:56:09+09:00",
+      "status": 200,
+      "final_url": "https://cbnu-clip-it.vercel.app/login",
+      "headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Content-Length": "9903",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Server": "Vercel"
+      },
+      "response_summary": {
+        "html_response": true
+      }
+    },
+    {
+      "path": "/api/works",
+      "method": "GET",
+      "checked_at_utc": "2026-10-03T09:56:09+00:00",
+      "checked_at_kst": "2026-10-03T18:56:09+09:00",
+      "status": 200,
+      "final_url": "https://cbnu-clip-it.vercel.app/api/works",
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Server": "Vercel"
+      },
+      "response_summary": {
+        "json_type": "array",
+        "items": 0
+      }
+    },
+    {
+      "path": "/api/admin/books",
+      "method": "GET",
+      "checked_at_utc": "2026-10-03T09:56:11+00:00",
+      "checked_at_kst": "2026-10-03T18:56:11+09:00",
+      "status": 401,
+      "final_url": "https://cbnu-clip-it.vercel.app/api/admin/books",
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=0, must-revalidate",
+        "Server": "Vercel"
+      },
+      "response_summary": {
+        "error": "Unauthorized"
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import unittest
-from build_template import build
+from legacy.build_template import build
 
 
 class TemplateTest(unittest.TestCase):
